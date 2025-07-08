@@ -1,13 +1,10 @@
 from flask import Flask, render_template_string, request, redirect, url_for
 import bs4, urllib.request, json, ssl
 from datetime import date
-from sentence_transformers import SentenceTransformer, util
 from rapidfuzz import fuzz
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
-model = SentenceTransformer('all-MiniLM-L6-v2')
-THRESHOLD = 0.4
 FUZZY_THRESHOLD = 85
 
 KEYWORDS_FILE = "keywords.json"
@@ -118,13 +115,7 @@ def index():
                         if score >= FUZZY_THRESHOLD:
                             matches.append(f"{item} (fuzzy match, score: {score})")
                             break
-                        emb1 = model.encode(keyword, convert_to_tensor=True)
-                        emb2 = model.encode(item, convert_to_tensor=True)
-                        sim = util.cos_sim(emb1, emb2)
-                        sim_score = sim.item()
-                        if sim_score >= THRESHOLD:
-                            matches.append(f"{item} (semantic match, score: {sim_score:.2f})")
-                            break
+                        
                 if matches:
                     matches_found[mensa_name] = list(dict.fromkeys(matches))
 
@@ -167,5 +158,8 @@ TEMPLATE = """
 </html>
 """
 
+import os
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
